@@ -13,6 +13,7 @@ function App() {
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [mode, setMode] = useState('test'); // Default to Test Mode
   const [quizStarted, setQuizStarted] = useState(false); // Track if the quiz has started
+  const [randomize, setRandomize] = useState(false); // Track randomizer toggle
   const [score, setScore] = useState(0); // Track the user's score
 
   useEffect(() => {
@@ -26,6 +27,7 @@ function App() {
         quizCompleted: savedCompleted,
         mode: savedMode,
         quizStarted: savedQuizStarted,
+        randomize: savedRandomize,
         score: savedScore,
       } = JSON.parse(savedQuizState);
 
@@ -37,6 +39,7 @@ function App() {
         setQuizCompleted(savedCompleted || false);
         setMode(savedMode || 'test');
         setQuizStarted(savedQuizStarted || false);
+        setRandomize(savedRandomize || false);
         setScore(savedScore || 0);
       }
     }
@@ -52,11 +55,12 @@ function App() {
         quizCompleted,
         mode,
         quizStarted,
+        randomize,
         score,
       };
       localStorage.setItem('quizState', JSON.stringify(quizState));
     }
-  }, [questions, currentQuestionIndex, userAnswers, isEndScreen, quizCompleted, mode, quizStarted, score]);
+  }, [questions, currentQuestionIndex, userAnswers, isEndScreen, quizCompleted, mode, quizStarted, randomize, score]);
 
   const handleFileLoad = (parsedQuestions) => {
     setQuestions(parsedQuestions);
@@ -66,11 +70,15 @@ function App() {
     setQuizCompleted(false);
     setMode('test');
     setQuizStarted(false);
+    setRandomize(false); // Reset randomizer
     setScore(0); // Reset score
     localStorage.removeItem('quizState');
   };
 
   const handleStartQuiz = () => {
+    if (randomize) {
+      setQuestions(shuffleArray([...questions])); // Shuffle questions if random mode is selected
+    }
     setQuizStarted(true);
   };
 
@@ -78,6 +86,20 @@ function App() {
     if (!quizStarted) {
       setMode(newMode);
     }
+  };
+
+  const handleRandomizeToggle = () => {
+    if (!quizStarted) {
+      setRandomize((prev) => !prev); // Toggle randomizer
+    }
+  };
+
+  const shuffleArray = (array) => {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
   };
 
   const handleNextQuestion = (selectedOption) => {
@@ -97,13 +119,6 @@ function App() {
     setCurrentQuestionIndex((prevIndex) => prevIndex - 1);
   };
 
-  const handleEndExam = () => {
-    if (mode === 'test') {
-      calculateScore(); // Calculate score only in Test Mode
-    }
-    setQuizCompleted(true);
-  };
-
   const calculateScore = () => {
     let correctCount = 0;
     questions.forEach((question, index) => {
@@ -111,7 +126,12 @@ function App() {
         correctCount++;
       }
     });
-    setScore(correctCount);
+    setScore(correctCount); // Update the score state
+  };
+
+  const handleEndExam = () => {
+    calculateScore(); // Calculate score for both Practice and Test Modes
+    setQuizCompleted(true);
   };
 
   const handleQuestionClick = (index) => {
@@ -123,23 +143,39 @@ function App() {
     <div>
       <h1>Quiz App</h1>
       <FileUpload onFileLoad={handleFileLoad} />
-      {!quizStarted && <ModeSelector mode={mode} onModeChange={handleModeChange} />}
       {!quizStarted && questions.length > 0 && (
-        <button onClick={handleStartQuiz} style={{ margin: '20px', padding: '10px 20px' }}>
-          Start Quiz
-        </button>
+        <div style={{ marginTop: '20px' }}>
+          <ModeSelector mode={mode} onModeChange={handleModeChange} />
+          <div style={{ margin: '20px 0' }}>
+            <label>
+              <input
+                type="checkbox"
+                checked={randomize}
+                onChange={handleRandomizeToggle}
+              />
+              Randomize Questions
+            </label>
+          </div>
+          <button
+            onClick={handleStartQuiz}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#007bff',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+            }}
+          >
+            Start Quiz
+          </button>
+        </div>
       )}
       {quizCompleted ? (
         <div>
           <h2>Quiz Completed!</h2>
-          {mode === 'test' ? (
-            <>
-              <p>Score: {score} / {questions.length}</p>
-              <p>Percentage: {(score / questions.length) * 100}%</p>
-            </>
-          ) : (
-            <p>You completed the quiz in Practice Mode. No score to display.</p>
-          )}
+          <p>Score: {score} / {questions.length}</p>
+          <p>Percentage: {(score / questions.length) * 100}%</p>
           <p>Your Answers: {JSON.stringify(userAnswers, null, 2)}</p>
         </div>
       ) : isEndScreen ? (

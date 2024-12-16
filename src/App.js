@@ -57,19 +57,22 @@ function App() {
 
   const handleStartQuiz = () => {
     let selected = [...questions];
-
+  
+    // Shuffle the questions array to pick random questions
+    if (randomize || numQuestions !== 'all') {
+      selected = shuffleArray([...questions]);
+    }
+  
+    // Select the desired number of questions at random
     if (numQuestions !== 'all') {
-      selected = selected.slice(0, parseInt(numQuestions, 10));
+      const totalQuestions = Math.min(parseInt(numQuestions, 10), questions.length);
+      selected = selected.slice(0, totalQuestions);
     }
-
-    if (randomize) {
-      selected = shuffleArray(selected);
-    }
-
+  
     setSelectedQuestions(selected);
     setQuizStarted(true);
     setTimeRemaining(timeAllowed * 60); // Convert minutes to seconds
-  };
+  };  
 
   const shuffleArray = (array) => {
     for (let i = array.length - 1; i > 0; i--) {

@@ -1,35 +1,90 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FileUpload from './components/FileUpload';
 import QuestionDisplay from './components/QuestionDisplay';
 import QuestionNavigator from './components/QuestionNavigator';
+import ModeSelector from './components/ModeSelector';
 import parseAiken from './utils/parseAiken';
 
 function App() {
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState({}); // Store user's answers
-  const [isEndScreen, setIsEndScreen] = useState(false); // Track if user is on the end screen
-  const [quizCompleted, setQuizCompleted] = useState(false); // Track if the quiz is completed
+  const [userAnswers, setUserAnswers] = useState({});
+  const [isEndScreen, setIsEndScreen] = useState(false);
+  const [quizCompleted, setQuizCompleted] = useState(false);
+  const [mode, setMode] = useState('test'); // Default to Test Mode
+  const [quizStarted, setQuizStarted] = useState(false); // Track if the quiz has started
+
+  useEffect(() => {
+    const savedQuizState = localStorage.getItem('quizState');
+    if (savedQuizState) {
+      const {
+        questions: savedQuestions,
+        currentQuestionIndex: savedIndex,
+        userAnswers: savedAnswers,
+        isEndScreen: savedEndScreen,
+        quizCompleted: savedCompleted,
+        mode: savedMode,
+        quizStarted: savedQuizStarted,
+      } = JSON.parse(savedQuizState);
+
+      if (savedQuestions?.length) {
+        setQuestions(savedQuestions);
+        setCurrentQuestionIndex(savedIndex || 0);
+        setUserAnswers(savedAnswers || {});
+        setIsEndScreen(savedEndScreen || false);
+        setQuizCompleted(savedCompleted || false);
+        setMode(savedMode || 'test');
+        setQuizStarted(savedQuizStarted || false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (questions.length > 0) {
+      const quizState = {
+        questions,
+        currentQuestionIndex,
+        userAnswers,
+        isEndScreen,
+        quizCompleted,
+        mode,
+        quizStarted,
+      };
+      localStorage.setItem('quizState', JSON.stringify(quizState));
+    }
+  }, [questions, currentQuestionIndex, userAnswers, isEndScreen, quizCompleted, mode, quizStarted]);
 
   const handleFileLoad = (parsedQuestions) => {
-    setQuestions(parsedQuestions); // Load questions
-    setCurrentQuestionIndex(0); // Reset to the first question
-    setUserAnswers({}); // Reset user's answers
-    setIsEndScreen(false); // Reset end screen state
-    setQuizCompleted(false); // Reset quiz completion
+    setQuestions(parsedQuestions);
+    setCurrentQuestionIndex(0);
+    setUserAnswers({});
+    setIsEndScreen(false);
+    setQuizCompleted(false);
+    setMode('test'); // Reset to default mode
+    setQuizStarted(false); // Reset quiz start status
+    localStorage.removeItem('quizState');
+  };
+
+  const handleStartQuiz = () => {
+    setQuizStarted(true); // Mark quiz as started
+  };
+
+  const handleModeChange = (newMode) => {
+    if (!quizStarted) {
+      setMode(newMode); // Allow toggling only if quiz hasn't started
+    }
   };
 
   const handleNextQuestion = (selectedOption) => {
-    // Save the selected answer (even if it's null)
     setUserAnswers((prevAnswers) => ({
       ...prevAnswers,
       [currentQuestionIndex]: selectedOption,
     }));
 
     if (currentQuestionIndex === questions.length - 1) {
-      setIsEndScreen(true); // Navigate to the end screen after the last question
+      setIsEndScreen(true);
     } else {
-      setCurrentQuestionIndex((prevIndex) => prevIndex + 1); // Move to the next question
+      setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
     }
   };
 
@@ -38,18 +93,24 @@ function App() {
   };
 
   const handleEndExam = () => {
-    setQuizCompleted(true); // Mark the quiz as completed
+    setQuizCompleted(true);
   };
 
   const handleQuestionClick = (index) => {
-    setIsEndScreen(false); // Exit end screen if navigating back
-    setCurrentQuestionIndex(index); // Navigate to the clicked question
+    setIsEndScreen(false);
+    setCurrentQuestionIndex(index);
   };
 
   return (
     <div>
       <h1>Quiz App</h1>
       <FileUpload onFileLoad={handleFileLoad} />
+      {!quizStarted && <ModeSelector mode={mode} onModeChange={handleModeChange} />}
+      {!quizStarted && questions.length > 0 && (
+        <button onClick={handleStartQuiz} style={{ margin: '20px', padding: '10px 20px' }}>
+          Start Quiz
+        </button>
+      )}
       {quizCompleted ? (
         <div>
           <h2>Quiz Completed!</h2>
@@ -65,7 +126,7 @@ function App() {
             Submit Quiz
           </button>
         </div>
-      ) : questions.length > 0 ? (
+      ) : quizStarted && questions.length > 0 ? (
         <>
           <QuestionNavigator
             totalQuestions={questions.length}
@@ -78,7 +139,8 @@ function App() {
             onPrevious={handlePreviousQuestion}
             isLastQuestion={currentQuestionIndex === questions.length - 1}
             isFirstQuestion={currentQuestionIndex === 0}
-            selectedAnswer={userAnswers[currentQuestionIndex] || null} // Pass saved answer or null
+            selectedAnswer={userAnswers[currentQuestionIndex] || null}
+            mode={mode} // Pass the mode to QuestionDisplay
           />
         </>
       ) : null}

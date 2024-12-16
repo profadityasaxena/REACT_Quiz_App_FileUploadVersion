@@ -6,13 +6,14 @@ const QuestionDisplay = ({
   onPrevious,
   isLastQuestion,
   isFirstQuestion,
-  selectedAnswer, // Previously selected answer
+  selectedAnswer,
+  mode, // Receive the mode as a prop
 }) => {
   const [selectedOption, setSelectedOption] = useState(selectedAnswer || null);
+  const [revealAnswer, setRevealAnswer] = useState(false);
 
-  // Sync local state with selectedAnswer when the question changes
   useEffect(() => {
-    setSelectedOption(selectedAnswer || null); // Reset to null if no answer exists
+    setSelectedOption(selectedAnswer || null);
   }, [selectedAnswer, question]);
 
   const handleOptionChange = (e) => {
@@ -20,16 +21,18 @@ const QuestionDisplay = ({
   };
 
   const handleNext = () => {
-    onNext(selectedOption); // Pass the selected option (or null) to the parent
+    setRevealAnswer(false);
+    onNext(selectedOption);
   };
 
   const handlePrevious = () => {
-    onPrevious(); // Navigate to the previous question
+    setRevealAnswer(false);
+    onPrevious();
   };
 
-  if (!question) {
-    return <p>No question to display!</p>; // Fallback for missing question
-  }
+  const handleReveal = () => {
+    setRevealAnswer(true);
+  };
 
   return (
     <div style={{ margin: '20px', padding: '20px', border: '1px solid #ccc' }}>
@@ -44,20 +47,26 @@ const QuestionDisplay = ({
                 value={key}
                 checked={selectedOption === key}
                 onChange={handleOptionChange}
+                disabled={mode === 'practice' && revealAnswer} // Disable after reveal in Practice Mode
               />
               {key}. {value}
             </label>
           </div>
         ))}
       </form>
+      {mode === 'practice' && !revealAnswer && (
+        <button onClick={handleReveal} style={{ margin: '10px 0' }}>
+          Reveal Answer
+        </button>
+      )}
+      {revealAnswer && mode === 'practice' && (
+        <p style={{ color: 'green' }}>Correct Answer: {question.answer}</p>
+      )}
       <div style={{ marginTop: '20px' }}>
         <button onClick={handlePrevious} disabled={isFirstQuestion}>
           Previous
         </button>
-        <button
-          onClick={handleNext}
-          style={{ marginLeft: '10px' }}
-        >
+        <button onClick={handleNext} style={{ marginLeft: '10px' }}>
           Next
         </button>
       </div>

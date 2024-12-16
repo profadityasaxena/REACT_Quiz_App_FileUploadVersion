@@ -3,12 +3,12 @@ import FileUpload from './components/FileUpload';
 import QuestionDisplay from './components/QuestionDisplay';
 import QuestionNavigator from './components/QuestionNavigator';
 import ModeSelector from './components/ModeSelector';
-import QuestionReview from './components/QuestionReview'; // Import QuestionReview
+import QuestionReview from './components/QuestionReview';
 import parseAiken from './utils/parseAiken';
 
 function App() {
   const [questions, setQuestions] = useState([]);
-  const [selectedQuestions, setSelectedQuestions] = useState([]); // Questions for the current quiz
+  const [selectedQuestions, setSelectedQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState({});
   const [isEndScreen, setIsEndScreen] = useState(false);
@@ -17,10 +17,10 @@ function App() {
   const [quizStarted, setQuizStarted] = useState(false);
   const [randomize, setRandomize] = useState(false);
   const [score, setScore] = useState(0);
+  const [reviewMode, setReviewMode] = useState(false);
   const [timeAllowed, setTimeAllowed] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [numQuestions, setNumQuestions] = useState('all');
-  const [reviewMode, setReviewMode] = useState(false); // Track review mode
 
   useEffect(() => {
     let timer = null;
@@ -36,6 +36,10 @@ function App() {
 
   const handleFileLoad = (parsedQuestions) => {
     setQuestions(parsedQuestions);
+    resetQuiz();
+  };
+
+  const resetQuiz = () => {
     setSelectedQuestions([]);
     setCurrentQuestionIndex(0);
     setUserAnswers({});
@@ -64,7 +68,7 @@ function App() {
 
     setSelectedQuestions(selected);
     setQuizStarted(true);
-    setTimeRemaining(timeAllowed * 60);
+    setTimeRemaining(timeAllowed * 60); // Convert minutes to seconds
   };
 
   const shuffleArray = (array) => {
@@ -108,7 +112,16 @@ function App() {
   };
 
   const handleReviewQuiz = () => {
-    setReviewMode(true); // Enable review mode
+    setReviewMode(true);
+  };
+
+  const handleStartNewQuiz = () => {
+    resetQuiz(); // Reset the quiz state
+  };
+
+  const handleQuestionClick = (index) => {
+    setIsEndScreen(false);
+    setCurrentQuestionIndex(index);
   };
 
   return (
@@ -118,7 +131,39 @@ function App() {
       {!quizStarted && questions.length > 0 && (
         <div>
           <ModeSelector mode={mode} onModeChange={(newMode) => setMode(newMode)} />
-          {/* Add inputs for time allowed and number of questions */}
+          <div>
+            <label>
+              Number of Questions:
+              <input
+                type="number"
+                value={numQuestions === 'all' ? '' : numQuestions}
+                onChange={(e) => setNumQuestions(e.target.value)}
+                placeholder="Enter number or 'all'"
+              />
+            </label>
+          </div>
+          <div>
+            <label>
+              Time Allowed (minutes):
+              <input
+                type="number"
+                value={timeAllowed || ''}
+                onChange={(e) => setTimeAllowed(parseInt(e.target.value, 10) || 0)}
+                placeholder="Enter time in minutes"
+              />
+            </label>
+          </div>
+          <div>
+            <label>
+              <input
+                type="checkbox"
+                checked={randomize}
+                onChange={() => setRandomize((prev) => !prev)}
+              />
+              Randomize Questions
+            </label>
+          </div>
+          <button onClick={handleStartQuiz}>Start Quiz</button>
         </div>
       )}
       {reviewMode ? (
@@ -133,11 +178,30 @@ function App() {
           <h2>Quiz Completed!</h2>
           <p>Score: {score} / {selectedQuestions.length}</p>
           <p>Percentage: {(score / selectedQuestions.length) * 100}%</p>
+          <button onClick={handleReviewQuiz}>Review Quiz</button>
           <button
-            onClick={handleReviewQuiz}
+            onClick={handleStartNewQuiz}
             style={{
+              marginLeft: '10px',
               padding: '10px 20px',
+              backgroundColor: '#28a745',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+            }}
+          >
+            Start New Quiz
+          </button>
+        </div>
+      ) : isEndScreen ? (
+        <div>
+          <h2>End Exam</h2>
+          <button
+            onClick={handleEndExam}
+            style={{
               marginTop: '20px',
+              padding: '10px 20px',
               backgroundColor: '#007bff',
               color: '#fff',
               border: 'none',
@@ -145,7 +209,7 @@ function App() {
               cursor: 'pointer',
             }}
           >
-            Review Quiz
+            Submit Quiz
           </button>
         </div>
       ) : quizStarted && selectedQuestions.length > 0 ? (
@@ -153,7 +217,7 @@ function App() {
           <QuestionNavigator
             totalQuestions={selectedQuestions.length}
             currentQuestionIndex={currentQuestionIndex}
-            onQuestionClick={(index) => setCurrentQuestionIndex(index)}
+            onQuestionClick={handleQuestionClick}
           />
           <QuestionDisplay
             question={selectedQuestions[currentQuestionIndex]}

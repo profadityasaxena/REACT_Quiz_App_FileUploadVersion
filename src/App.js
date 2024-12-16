@@ -13,6 +13,7 @@ function App() {
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [mode, setMode] = useState('test'); // Default to Test Mode
   const [quizStarted, setQuizStarted] = useState(false); // Track if the quiz has started
+  const [score, setScore] = useState(0); // Track the user's score
 
   useEffect(() => {
     const savedQuizState = localStorage.getItem('quizState');
@@ -25,6 +26,7 @@ function App() {
         quizCompleted: savedCompleted,
         mode: savedMode,
         quizStarted: savedQuizStarted,
+        score: savedScore,
       } = JSON.parse(savedQuizState);
 
       if (savedQuestions?.length) {
@@ -35,6 +37,7 @@ function App() {
         setQuizCompleted(savedCompleted || false);
         setMode(savedMode || 'test');
         setQuizStarted(savedQuizStarted || false);
+        setScore(savedScore || 0);
       }
     }
   }, []);
@@ -49,10 +52,11 @@ function App() {
         quizCompleted,
         mode,
         quizStarted,
+        score,
       };
       localStorage.setItem('quizState', JSON.stringify(quizState));
     }
-  }, [questions, currentQuestionIndex, userAnswers, isEndScreen, quizCompleted, mode, quizStarted]);
+  }, [questions, currentQuestionIndex, userAnswers, isEndScreen, quizCompleted, mode, quizStarted, score]);
 
   const handleFileLoad = (parsedQuestions) => {
     setQuestions(parsedQuestions);
@@ -60,18 +64,19 @@ function App() {
     setUserAnswers({});
     setIsEndScreen(false);
     setQuizCompleted(false);
-    setMode('test'); // Reset to default mode
-    setQuizStarted(false); // Reset quiz start status
+    setMode('test');
+    setQuizStarted(false);
+    setScore(0); // Reset score
     localStorage.removeItem('quizState');
   };
 
   const handleStartQuiz = () => {
-    setQuizStarted(true); // Mark quiz as started
+    setQuizStarted(true);
   };
 
   const handleModeChange = (newMode) => {
     if (!quizStarted) {
-      setMode(newMode); // Allow toggling only if quiz hasn't started
+      setMode(newMode);
     }
   };
 
@@ -93,7 +98,20 @@ function App() {
   };
 
   const handleEndExam = () => {
+    if (mode === 'test') {
+      calculateScore(); // Calculate score only in Test Mode
+    }
     setQuizCompleted(true);
+  };
+
+  const calculateScore = () => {
+    let correctCount = 0;
+    questions.forEach((question, index) => {
+      if (userAnswers[index] === question.answer) {
+        correctCount++;
+      }
+    });
+    setScore(correctCount);
   };
 
   const handleQuestionClick = (index) => {
@@ -114,6 +132,14 @@ function App() {
       {quizCompleted ? (
         <div>
           <h2>Quiz Completed!</h2>
+          {mode === 'test' ? (
+            <>
+              <p>Score: {score} / {questions.length}</p>
+              <p>Percentage: {(score / questions.length) * 100}%</p>
+            </>
+          ) : (
+            <p>You completed the quiz in Practice Mode. No score to display.</p>
+          )}
           <p>Your Answers: {JSON.stringify(userAnswers, null, 2)}</p>
         </div>
       ) : isEndScreen ? (
@@ -140,7 +166,7 @@ function App() {
             isLastQuestion={currentQuestionIndex === questions.length - 1}
             isFirstQuestion={currentQuestionIndex === 0}
             selectedAnswer={userAnswers[currentQuestionIndex] || null}
-            mode={mode} // Pass the mode to QuestionDisplay
+            mode={mode}
           />
         </>
       ) : null}

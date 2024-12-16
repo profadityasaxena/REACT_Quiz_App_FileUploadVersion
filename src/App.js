@@ -3,6 +3,7 @@ import FileUpload from './components/FileUpload';
 import QuestionDisplay from './components/QuestionDisplay';
 import QuestionNavigator from './components/QuestionNavigator';
 import ModeSelector from './components/ModeSelector';
+import QuestionReview from './components/QuestionReview'; // Import QuestionReview
 import parseAiken from './utils/parseAiken';
 
 function App() {
@@ -12,85 +13,14 @@ function App() {
   const [userAnswers, setUserAnswers] = useState({});
   const [isEndScreen, setIsEndScreen] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
-  const [mode, setMode] = useState('test'); // Default to Test Mode
-  const [quizStarted, setQuizStarted] = useState(false); // Track if the quiz has started
-  const [randomize, setRandomize] = useState(false); // Track randomizer toggle
-  const [score, setScore] = useState(0); // Track the user's score
-  const [timeAllowed, setTimeAllowed] = useState(0); // Time allowed for the quiz in minutes
-  const [timeRemaining, setTimeRemaining] = useState(null); // Timer countdown
-  const [numQuestions, setNumQuestions] = useState('all'); // Number of questions for the quiz
-
-  useEffect(() => {
-    const savedQuizState = localStorage.getItem('quizState');
-    if (savedQuizState) {
-      const {
-        questions: savedQuestions,
-        selectedQuestions: savedSelectedQuestions,
-        currentQuestionIndex: savedIndex,
-        userAnswers: savedAnswers,
-        isEndScreen: savedEndScreen,
-        quizCompleted: savedCompleted,
-        mode: savedMode,
-        quizStarted: savedQuizStarted,
-        randomize: savedRandomize,
-        score: savedScore,
-        timeAllowed: savedTimeAllowed,
-        timeRemaining: savedTimeRemaining,
-        numQuestions: savedNumQuestions,
-      } = JSON.parse(savedQuizState);
-
-      if (savedQuestions?.length) {
-        setQuestions(savedQuestions);
-        setSelectedQuestions(savedSelectedQuestions || []);
-        setCurrentQuestionIndex(savedIndex || 0);
-        setUserAnswers(savedAnswers || {});
-        setIsEndScreen(savedEndScreen || false);
-        setQuizCompleted(savedCompleted || false);
-        setMode(savedMode || 'test');
-        setQuizStarted(savedQuizStarted || false);
-        setRandomize(savedRandomize || false);
-        setScore(savedScore || 0);
-        setTimeAllowed(savedTimeAllowed || 0);
-        setTimeRemaining(savedTimeRemaining || null);
-        setNumQuestions(savedNumQuestions || 'all');
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (selectedQuestions.length > 0) {
-      const quizState = {
-        questions,
-        selectedQuestions,
-        currentQuestionIndex,
-        userAnswers,
-        isEndScreen,
-        quizCompleted,
-        mode,
-        quizStarted,
-        randomize,
-        score,
-        timeAllowed,
-        timeRemaining,
-        numQuestions,
-      };
-      localStorage.setItem('quizState', JSON.stringify(quizState));
-    }
-  }, [
-    questions,
-    selectedQuestions,
-    currentQuestionIndex,
-    userAnswers,
-    isEndScreen,
-    quizCompleted,
-    mode,
-    quizStarted,
-    randomize,
-    score,
-    timeAllowed,
-    timeRemaining,
-    numQuestions,
-  ]);
+  const [mode, setMode] = useState('test');
+  const [quizStarted, setQuizStarted] = useState(false);
+  const [randomize, setRandomize] = useState(false);
+  const [score, setScore] = useState(0);
+  const [timeAllowed, setTimeAllowed] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(null);
+  const [numQuestions, setNumQuestions] = useState('all');
+  const [reviewMode, setReviewMode] = useState(false); // Track review mode
 
   useEffect(() => {
     let timer = null;
@@ -99,7 +29,7 @@ function App() {
         setTimeRemaining((prevTime) => prevTime - 1);
       }, 1000);
     } else if (timeRemaining === 0) {
-      handleEndExam(); // Auto-submit quiz when timer expires
+      handleEndExam();
     }
     return () => clearInterval(timer);
   }, [quizStarted, timeRemaining]);
@@ -113,48 +43,28 @@ function App() {
     setQuizCompleted(false);
     setMode('test');
     setQuizStarted(false);
-    setRandomize(false); // Reset randomizer
-    setScore(0); // Reset score
-    setTimeAllowed(0); // Reset time allowed
-    setTimeRemaining(null); // Reset timer
-    setNumQuestions('all'); // Reset question selection
-    localStorage.removeItem('quizState');
+    setRandomize(false);
+    setScore(0);
+    setTimeAllowed(0);
+    setTimeRemaining(null);
+    setNumQuestions('all');
+    setReviewMode(false);
   };
 
   const handleStartQuiz = () => {
     let selected = [...questions];
 
     if (numQuestions !== 'all') {
-      selected = selected.slice(0, parseInt(numQuestions, 10)); // Select the specified number of questions
+      selected = selected.slice(0, parseInt(numQuestions, 10));
     }
 
     if (randomize) {
-      selected = shuffleArray(selected); // Shuffle if random mode is selected
+      selected = shuffleArray(selected);
     }
 
     setSelectedQuestions(selected);
     setQuizStarted(true);
-    setTimeRemaining(timeAllowed * 60); // Convert minutes to seconds
-  };
-
-  const handleModeChange = (newMode) => {
-    if (!quizStarted) {
-      setMode(newMode);
-    }
-  };
-
-  const handleRandomizeToggle = () => {
-    if (!quizStarted) {
-      setRandomize((prev) => !prev); // Toggle randomizer
-    }
-  };
-
-  const handleNumQuestionsChange = (e) => {
-    setNumQuestions(e.target.value);
-  };
-
-  const handleTimeAllowedChange = (e) => {
-    setTimeAllowed(parseInt(e.target.value, 10) || 0);
+    setTimeRemaining(timeAllowed * 60);
   };
 
   const shuffleArray = (array) => {
@@ -189,17 +99,16 @@ function App() {
         correctCount++;
       }
     });
-    setScore(correctCount); // Update the score state
+    setScore(correctCount);
   };
 
   const handleEndExam = () => {
-    calculateScore(); // Calculate score for both Practice and Test Modes
+    calculateScore();
     setQuizCompleted(true);
   };
 
-  const handleQuestionClick = (index) => {
-    setIsEndScreen(false);
-    setCurrentQuestionIndex(index);
+  const handleReviewQuiz = () => {
+    setReviewMode(true); // Enable review mode
   };
 
   return (
@@ -207,44 +116,28 @@ function App() {
       <h1>Quiz App</h1>
       <FileUpload onFileLoad={handleFileLoad} />
       {!quizStarted && questions.length > 0 && (
-        <div style={{ marginTop: '20px' }}>
-          <ModeSelector mode={mode} onModeChange={handleModeChange} />
-          <div style={{ margin: '20px 0' }}>
-            <label>
-              <input
-                type="checkbox"
-                checked={randomize}
-                onChange={handleRandomizeToggle}
-              />
-              Randomize Questions
-            </label>
-          </div>
-          <div>
-            <label>
-              Number of Questions:
-              <input
-                type="number"
-                value={numQuestions === 'all' ? '' : numQuestions}
-                onChange={handleNumQuestionsChange}
-                placeholder="Enter number or 'all'"
-              />
-            </label>
-          </div>
-          <div>
-            <label>
-              Time Allowed (minutes):
-              <input
-                type="number"
-                value={timeAllowed || ''}
-                onChange={handleTimeAllowedChange}
-                placeholder="Enter time in minutes"
-              />
-            </label>
-          </div>
+        <div>
+          <ModeSelector mode={mode} onModeChange={(newMode) => setMode(newMode)} />
+          {/* Add inputs for time allowed and number of questions */}
+        </div>
+      )}
+      {reviewMode ? (
+        <QuestionReview
+          questions={selectedQuestions}
+          userAnswers={userAnswers}
+          score={score}
+          totalQuestions={selectedQuestions.length}
+        />
+      ) : quizCompleted ? (
+        <div>
+          <h2>Quiz Completed!</h2>
+          <p>Score: {score} / {selectedQuestions.length}</p>
+          <p>Percentage: {(score / selectedQuestions.length) * 100}%</p>
           <button
-            onClick={handleStartQuiz}
+            onClick={handleReviewQuiz}
             style={{
               padding: '10px 20px',
+              marginTop: '20px',
               backgroundColor: '#007bff',
               color: '#fff',
               border: 'none',
@@ -252,37 +145,15 @@ function App() {
               cursor: 'pointer',
             }}
           >
-            Start Quiz
-          </button>
-        </div>
-      )}
-      {quizCompleted ? (
-        <div>
-          <h2>Quiz Completed!</h2>
-          <p>Score: {score} / {selectedQuestions.length}</p>
-          <p>Percentage: {(score / selectedQuestions.length) * 100}%</p>
-          <p>Your Answers: {JSON.stringify(userAnswers, null, 2)}</p>
-        </div>
-      ) : isEndScreen ? (
-        <div>
-          <h2>End Exam</h2>
-          <button
-            onClick={handleEndExam}
-            style={{ marginTop: '20px', padding: '10px 20px' }}
-          >
-            Submit Quiz
+            Review Quiz
           </button>
         </div>
       ) : quizStarted && selectedQuestions.length > 0 ? (
         <>
-          <div style={{ margin: '20px', fontSize: '18px', color: 'red' }}>
-            Time Remaining: {Math.floor(timeRemaining / 60)}:
-            {(timeRemaining % 60).toString().padStart(2, '0')}
-          </div>
           <QuestionNavigator
             totalQuestions={selectedQuestions.length}
             currentQuestionIndex={currentQuestionIndex}
-            onQuestionClick={handleQuestionClick}
+            onQuestionClick={(index) => setCurrentQuestionIndex(index)}
           />
           <QuestionDisplay
             question={selectedQuestions[currentQuestionIndex]}

@@ -22,6 +22,18 @@ function App() {
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [numQuestions, setNumQuestions] = useState('all');
 
+  useEffect(() => {
+    let timer = null;
+    if (quizStarted && timeRemaining > 0) {
+      timer = setInterval(() => {
+        setTimeRemaining((prevTime) => prevTime - 1);
+      }, 1000);
+    } else if (timeRemaining === 0 && quizStarted) {
+      handleEndExam();
+    }
+    return () => clearInterval(timer);
+  }, [quizStarted, timeRemaining]);
+
   const handleFileLoad = (parsedQuestions) => {
     setQuestions(parsedQuestions);
     resetQuiz();
@@ -45,11 +57,9 @@ function App() {
 
   const handleStartQuiz = () => {
     let selected = [...questions];
-
     if (randomize || numQuestions !== 'all') {
       selected = shuffleArray([...questions]);
     }
-
     if (numQuestions !== 'all') {
       const totalQuestions = Math.min(parseInt(numQuestions, 10), questions.length);
       selected = selected.slice(0, totalQuestions);
@@ -57,7 +67,7 @@ function App() {
 
     setSelectedQuestions(selected);
     setQuizStarted(true);
-    setTimeRemaining(timeAllowed * 60);
+    setTimeRemaining(timeAllowed * 60); // Convert minutes to seconds
   };
 
   const shuffleArray = (array) => {
@@ -73,7 +83,6 @@ function App() {
       ...prevAnswers,
       [currentQuestionIndex]: selectedOption,
     }));
-
     if (currentQuestionIndex === selectedQuestions.length - 1) {
       setIsEndScreen(true);
     } else {
@@ -100,101 +109,160 @@ function App() {
     setReviewMode(true);
   };
 
+  const getProgressPercentage = () => {
+    if (selectedQuestions.length === 0) return 0;
+  
+    // If quiz is completed, progress is 100%
+    if (quizCompleted || isEndScreen) {
+      return 100;
+    }
+  
+    // Otherwise, calculate progress as the number of answered/skipped questions
+    return ((currentQuestionIndex) / selectedQuestions.length) * 100;
+  };
+  
+  
+
   return (
-    <div className="bg-light" style={{ fontFamily: 'Avenir, sans-serif', minHeight: '100vh' }}>
+    <div style={{ fontFamily: 'Avenir, sans-serif' }}>
       {/* Top Bar */}
-      <nav className="navbar navbar-dark" style={{ backgroundColor: '#001219' }}>
+      <nav className="navbar navbar-dark fixed-top" style={{ backgroundColor: '#001219' }}>
         <div className="container-fluid">
           <span className="navbar-brand mb-0 h1 text-light">Quiz App</span>
         </div>
       </nav>
 
       {/* Main Content */}
-      <div className="container mt-4">
-        <FileUpload onFileLoad={handleFileLoad} />
-        {!quizStarted && questions.length > 0 && (
-          <div className="mb-3">
-            <ModeSelector mode={mode} onModeChange={(newMode) => setMode(newMode)} />
-            <div className="form-group mt-3">
-              <label>Number of Questions:</label>
-              <input
-                type="number"
-                className="form-control"
-                value={numQuestions === 'all' ? '' : numQuestions}
-                onChange={(e) => setNumQuestions(e.target.value)}
-                placeholder="Enter number or 'all'"
-              />
-            </div>
-            <div className="form-group mt-3">
-              <label>Time Allowed (minutes):</label>
-              <input
-                type="number"
-                className="form-control"
-                value={timeAllowed || ''}
-                onChange={(e) => setTimeAllowed(parseInt(e.target.value, 10) || 0)}
-                placeholder="Enter time in minutes"
-              />
-            </div>
-            <div className="form-check mt-3">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                checked={randomize}
-                onChange={() => setRandomize((prev) => !prev)}
-              />
-              <label className="form-check-label">Randomize Questions</label>
-            </div>
-            <button className="btn btn-primary mt-4" onClick={handleStartQuiz}>
-              Start Quiz
-            </button>
-          </div>
-        )}
-        {reviewMode ? (
-          <QuestionReview
-            questions={selectedQuestions}
-            userAnswers={userAnswers}
-            score={score}
-            totalQuestions={selectedQuestions.length}
-          />
-        ) : quizCompleted ? (
-          <div className="text-center">
-            <h2>Quiz Completed!</h2>
-            <p>
-              Score: {score} / {selectedQuestions.length} ({((score / selectedQuestions.length) * 100).toFixed(2)}%)
-            </p>
-            <button className="btn btn-success me-2" onClick={handleReviewQuiz}>
-              Review Quiz
-            </button>
-            <button className="btn btn-primary" onClick={resetQuiz}>
-              Start New Quiz
-            </button>
-          </div>
-        ) : isEndScreen ? (
-          <div className="text-center">
-            <h2>End Exam</h2>
-            <button className="btn btn-danger mt-3" onClick={handleEndExam}>
-              Submit Quiz
-            </button>
-          </div>
-        ) : quizStarted && selectedQuestions.length > 0 ? (
+      <div className="container mt-5 pt-5">
+        {quizStarted && (
           <>
-            <QuestionNavigator
-              totalQuestions={selectedQuestions.length}
-              currentQuestionIndex={currentQuestionIndex}
-              onQuestionClick={(index) => setCurrentQuestionIndex(index)}
-            />
-            <QuestionDisplay
-              question={selectedQuestions[currentQuestionIndex]}
-              onNext={handleNextQuestion}
-              selectedAnswer={userAnswers[currentQuestionIndex] || null}
-              mode={mode}
-            />
+            {/* Timer */}
+            <div className="text-center mb-3">
+              <h5 style={{ color: '#CA6702' }}>
+                Time Remaining: {Math.floor(timeRemaining / 60)}:
+                {String(timeRemaining % 60).padStart(2, '0')}
+              </h5>
+            </div>
+            {/* Progress Bar */}
+            <div className="progress mb-3">
+  <div
+    className="progress-bar"
+    role="progressbar"
+    style={{ width: `${getProgressPercentage()}%` }}
+    aria-valuenow={getProgressPercentage()}
+    aria-valuemin="0"
+    aria-valuemax="100"
+  >
+    {Math.round(getProgressPercentage())}%
+  </div>
+</div>
+
           </>
-        ) : null}
+        )}
+
+        <div className="jumbotron">
+        {reviewMode ? (
+  <div className="text-center">
+    <QuestionReview
+      questions={selectedQuestions}
+      userAnswers={userAnswers}
+      score={score}
+      totalQuestions={selectedQuestions.length}
+    />
+    <button
+      className="btn btn-primary mt-3"
+      onClick={resetQuiz}
+    >
+      Return to Main Screen
+    </button>
+    <hr />
+    <hr />
+
+  </div>
+) : quizCompleted ? (
+
+            <div className="text-center">
+              <h2>Quiz Completed!</h2>
+              <p>
+                Score: {score} / {selectedQuestions.length} (
+                {((score / selectedQuestions.length) * 100).toFixed(2)}%)
+              </p>
+              <button className="btn btn-success me-2" onClick={handleReviewQuiz}>
+                Review Quiz
+              </button>
+              <button className="btn btn-primary" onClick={resetQuiz}>
+                Start New Quiz
+              </button>
+            </div>
+          ) : isEndScreen ? (
+            <div className="text-center">
+              <h2>End Exam</h2>
+              <button className="btn btn-danger mt-3" onClick={handleEndExam}>
+                Submit Quiz
+              </button>
+            </div>
+          ) : quizStarted && selectedQuestions.length > 0 ? (
+            <>
+              <QuestionNavigator
+                totalQuestions={selectedQuestions.length}
+                currentQuestionIndex={currentQuestionIndex}
+                onQuestionClick={(index) => setCurrentQuestionIndex(index)}
+              />
+              <QuestionDisplay
+                question={selectedQuestions[currentQuestionIndex]}
+                onNext={handleNextQuestion}
+                onPrevious={() => setCurrentQuestionIndex((prev) => prev - 1)}
+                selectedAnswer={userAnswers[currentQuestionIndex] || null}
+                mode={mode}
+              />
+            </>
+          ) : (
+            <div>
+              <FileUpload onFileLoad={handleFileLoad} />
+              {!quizStarted && questions.length > 0 && (
+                <div>
+                  <ModeSelector mode={mode} onModeChange={(newMode) => setMode(newMode)} />
+                  <div className="form-group mt-3">
+                    <label>Number of Questions:</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={numQuestions === 'all' ? '' : numQuestions}
+                      onChange={(e) => setNumQuestions(e.target.value)}
+                      placeholder="Enter number or 'all'"
+                    />
+                  </div>
+                  <div className="form-group mt-3">
+                    <label>Time Allowed (minutes):</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={timeAllowed || ''}
+                      onChange={(e) => setTimeAllowed(parseInt(e.target.value, 10) || 0)}
+                      placeholder="Enter time in minutes"
+                    />
+                  </div>
+                  <div className="form-check mt-3">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      checked={randomize}
+                      onChange={() => setRandomize((prev) => !prev)}
+                    />
+                    <label className="form-check-label">Randomize Questions</label>
+                  </div>
+                  <button className="btn btn-primary mt-4" onClick={handleStartQuiz}>
+                    Start Quiz
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Bottom Bar */}
-      <footer className="text-center py-3" style={{ backgroundColor: '#001219', color: '#E9D8A6' }}>
+      {/* Footer */}
+      <footer className="text-center py-3 fixed-bottom" style={{ backgroundColor: '#001219', color: '#E9D8A6' }}>
         Created by Aditya Saxena
       </footer>
     </div>

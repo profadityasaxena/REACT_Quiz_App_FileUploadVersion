@@ -1,32 +1,35 @@
 import React from 'react';
-import parseAiken from '../utils/parseAiken'; // Import the utility function for parsing
+import parseAiken from '../utils/parseAiken';
 
 const FileUpload = ({ onFileLoad }) => {
   const handleFileChange = (event) => {
-    const file = event.target.files[0]; // Get the uploaded file
+    const file = event.target.files[0];
     if (file) {
-      const reader = new FileReader(); // Create a FileReader instance
+      const reader = new FileReader();
       reader.onload = (e) => {
-        const content = e.target.result; // Get the file content
-        const parsedQuestions = parseAiken(content); // Parse the content using Aiken format
-        onFileLoad(parsedQuestions); // Pass the parsed data to the parent
+        const content = e.target.result;
+        const parsedQuestions = parseAiken(content);
+        onFileLoad(parsedQuestions);
       };
-      reader.readAsText(file); // Read the file content as text
+      reader.readAsText(file);
     }
   };
 
   return (
     <div>
-      <label htmlFor="fileInput">
-        <input
-          type="file"
-          id="fileInput"
-          accept=".txt"
-          style={{ display: 'none' }}
-          onChange={handleFileChange}
-        />
-        <button type="button" onClick={() => document.getElementById('fileInput').click()}>Open File</button>
-      </label>
+      <input
+        type="file"
+        id="fileInput"
+        accept=".txt"
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
+      <button
+        className="btn btn-primary btn-lg" // Same styling as "Start Quiz" button
+        onClick={() => document.getElementById('fileInput').click()}
+      >
+        Open File
+      </button>
     </div>
   );
 };

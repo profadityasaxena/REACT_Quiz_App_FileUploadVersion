@@ -67,3 +67,9 @@ This project is for demo purposes only. The code may not be used in any other co
 
 ## Demonstration
 ![Home Page](screenshots/1.png)
+![Home Page](screenshots/2.png)
+![Home Page](screenshots/3.png)
+![Home Page](screenshots/4.png)
+![Home Page](screenshots/5.png)
+![Home Page](screenshots/6.png)
+![Home Page](screenshots/7.png)

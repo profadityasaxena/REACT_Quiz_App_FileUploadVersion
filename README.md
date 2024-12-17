@@ -64,3 +64,6 @@ Contributions are welcome! Please open an issue or submit a pull request.
 ## License
 
 This project is for demo purposes only. The code may not be used in any other context.
+
+## Demonstration
+![Home Page](screenshots/1.png)

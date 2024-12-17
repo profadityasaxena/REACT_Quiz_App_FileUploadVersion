@@ -2,7 +2,7 @@ import React from 'react';
 
 const QuestionNavigator = ({ totalQuestions, currentQuestionIndex, onQuestionClick }) => {
   return (
-    <div style={{ display: 'flex', gap: '10px', margin: '20px 0' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', margin: '20px 0' }}>
       {Array.from({ length: totalQuestions }, (_, index) => (
         <button
           key={index}
@@ -14,6 +14,8 @@ const QuestionNavigator = ({ totalQuestions, currentQuestionIndex, onQuestionCli
             color: index === currentQuestionIndex ? '#fff' : '#000',
             border: '1px solid #007bff',
             cursor: 'pointer',
+            width: '45px', // Set a fixed width for the buttons
+            textAlign: 'center', // Center the text inside the button
           }}
         >
           {index + 1}

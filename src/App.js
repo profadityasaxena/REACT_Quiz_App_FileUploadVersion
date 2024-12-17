@@ -145,10 +145,9 @@ function App() {
 
   const getProgressPercentage = () => {
     if (selectedQuestions.length === 0) return 0;
-    if (quizCompleted) return 100;
-    return ((currentQuestionIndex) / selectedQuestions.length) * 100; // Include current question
+    if (quizCompleted || isEndScreen) return 100;
+    return ((currentQuestionIndex + 1) / selectedQuestions.length) * 100; // Include current question
   };
-  
 
   return (
     <div style={{ fontFamily: 'Avenir, sans-serif' }}>
@@ -229,17 +228,17 @@ function App() {
             </div>
           ) : quizStarted && selectedQuestions.length > 0 ? (
             <>
-              <QuestionNavigator
-                totalQuestions={selectedQuestions.length}
-                currentQuestionIndex={currentQuestionIndex}
-                onQuestionClick={(index) => setCurrentQuestionIndex(index)}
-              />
               <QuestionDisplay
                 question={selectedQuestions[currentQuestionIndex]}
                 onNext={handleNextQuestion}
                 onPrevious={() => setCurrentQuestionIndex((prev) => prev - 1)}
                 selectedAnswer={userAnswers[currentQuestionIndex] || null}
                 mode={mode}
+              />
+              <QuestionNavigator
+                totalQuestions={selectedQuestions.length}
+                currentQuestionIndex={currentQuestionIndex}
+                onQuestionClick={(index) => setCurrentQuestionIndex(index)}
               />
             </>
           ) : (
@@ -285,7 +284,9 @@ function App() {
             </div>
           )}
         </div>
+        <div style={{ height: '100px' }}></div>
       </div>
+
 
       {/* Footer */}
       <footer className="text-center py-3 fixed-bottom" style={{ backgroundColor: '#001219', color: '#E9D8A6' }}>

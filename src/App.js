@@ -22,20 +22,12 @@ function App() {
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [numQuestions, setNumQuestions] = useState('all');
 
-  useEffect(() => {
-    let timer = null;
-    if (quizStarted && timeRemaining > 0) {
-      timer = setInterval(() => {
-        setTimeRemaining((prevTime) => prevTime - 1);
-      }, 1000);
-    } else if (timeRemaining === 0) {
-      handleEndExam();
-    }
-    return () => clearInterval(timer);
-  }, [quizStarted, timeRemaining]);
-
   const handleFileLoad = (parsedQuestions) => {
     setQuestions(parsedQuestions);
+    resetQuiz();
+  };
+
+  const resetQuiz = () => {
     setSelectedQuestions([]);
     setCurrentQuestionIndex(0);
     setUserAnswers({});
@@ -53,23 +45,20 @@ function App() {
 
   const handleStartQuiz = () => {
     let selected = [...questions];
-  
-    // Shuffle the questions array to pick random questions
+
     if (randomize || numQuestions !== 'all') {
       selected = shuffleArray([...questions]);
     }
-  
-    // Select the desired number of questions at random
+
     if (numQuestions !== 'all') {
       const totalQuestions = Math.min(parseInt(numQuestions, 10), questions.length);
       selected = selected.slice(0, totalQuestions);
     }
-  
+
     setSelectedQuestions(selected);
     setQuizStarted(true);
-    setTimeRemaining(timeAllowed * 60); // Convert minutes to seconds
+    setTimeRemaining(timeAllowed * 60);
   };
-  
 
   const shuffleArray = (array) => {
     for (let i = array.length - 1; i > 0; i--) {
@@ -85,16 +74,11 @@ function App() {
       [currentQuestionIndex]: selectedOption,
     }));
 
-    // Check if the current question is the last one
     if (currentQuestionIndex === selectedQuestions.length - 1) {
-      setIsEndScreen(true); // Transition to the end screen
+      setIsEndScreen(true);
     } else {
-      setCurrentQuestionIndex((prevIndex) => prevIndex + 1); // Move to the next question
+      setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
     }
-  };
-
-  const handlePreviousQuestion = () => {
-    setCurrentQuestionIndex((prevIndex) => prevIndex - 1);
   };
 
   const calculateScore = () => {
@@ -113,106 +97,106 @@ function App() {
   };
 
   const handleReviewQuiz = () => {
-    setReviewMode(true); // Enable review mode
-  };
-
-  const handleQuestionClick = (index) => {
-    setIsEndScreen(false);
-    setCurrentQuestionIndex(index);
+    setReviewMode(true);
   };
 
   return (
-    <div>
-      <h1>Quiz App</h1>
-      <FileUpload onFileLoad={handleFileLoad} />
-      {!quizStarted && questions.length > 0 && (
-        <div>
-          <ModeSelector mode={mode} onModeChange={(newMode) => setMode(newMode)} />
-          <div>
-            <label>
-              Number of Questions:
+    <div className="bg-light" style={{ fontFamily: 'Avenir, sans-serif', minHeight: '100vh' }}>
+      {/* Top Bar */}
+      <nav className="navbar navbar-dark" style={{ backgroundColor: '#001219' }}>
+        <div className="container-fluid">
+          <span className="navbar-brand mb-0 h1 text-light">Quiz App</span>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <div className="container mt-4">
+        <FileUpload onFileLoad={handleFileLoad} />
+        {!quizStarted && questions.length > 0 && (
+          <div className="mb-3">
+            <ModeSelector mode={mode} onModeChange={(newMode) => setMode(newMode)} />
+            <div className="form-group mt-3">
+              <label>Number of Questions:</label>
               <input
                 type="number"
+                className="form-control"
                 value={numQuestions === 'all' ? '' : numQuestions}
                 onChange={(e) => setNumQuestions(e.target.value)}
                 placeholder="Enter number or 'all'"
               />
-            </label>
-          </div>
-          <div>
-            <label>
-              Time Allowed (minutes):
+            </div>
+            <div className="form-group mt-3">
+              <label>Time Allowed (minutes):</label>
               <input
                 type="number"
+                className="form-control"
                 value={timeAllowed || ''}
                 onChange={(e) => setTimeAllowed(parseInt(e.target.value, 10) || 0)}
                 placeholder="Enter time in minutes"
               />
-            </label>
-          </div>
-          <div>
-            <label>
+            </div>
+            <div className="form-check mt-3">
               <input
                 type="checkbox"
+                className="form-check-input"
                 checked={randomize}
                 onChange={() => setRandomize((prev) => !prev)}
               />
-              Randomize Questions
-            </label>
+              <label className="form-check-label">Randomize Questions</label>
+            </div>
+            <button className="btn btn-primary mt-4" onClick={handleStartQuiz}>
+              Start Quiz
+            </button>
           </div>
-          <button onClick={handleStartQuiz}>Start Quiz</button>
-        </div>
-      )}
-      {reviewMode ? (
-        <QuestionReview
-          questions={selectedQuestions}
-          userAnswers={userAnswers}
-          score={score}
-          totalQuestions={selectedQuestions.length}
-        />
-      ) : quizCompleted ? (
-        <div>
-          <h2>Quiz Completed!</h2>
-          <p>Score: {score} / {selectedQuestions.length}</p>
-          <p>Percentage: {(score / selectedQuestions.length) * 100}%</p>
-          <button onClick={handleReviewQuiz}>Review Quiz</button>
-        </div>
-      ) : isEndScreen ? (
-        <div>
-          <h2>End Exam</h2>
-          <button
-            onClick={handleEndExam}
-            style={{
-              marginTop: '20px',
-              padding: '10px 20px',
-              backgroundColor: '#007bff',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-            }}
-          >
-            Submit Quiz
-          </button>
-        </div>
-      ) : quizStarted && selectedQuestions.length > 0 ? (
-        <>
-          <QuestionNavigator
+        )}
+        {reviewMode ? (
+          <QuestionReview
+            questions={selectedQuestions}
+            userAnswers={userAnswers}
+            score={score}
             totalQuestions={selectedQuestions.length}
-            currentQuestionIndex={currentQuestionIndex}
-            onQuestionClick={handleQuestionClick}
           />
-          <QuestionDisplay
-            question={selectedQuestions[currentQuestionIndex]}
-            onNext={handleNextQuestion}
-            onPrevious={handlePreviousQuestion}
-            isLastQuestion={currentQuestionIndex === selectedQuestions.length - 1}
-            isFirstQuestion={currentQuestionIndex === 0}
-            selectedAnswer={userAnswers[currentQuestionIndex] || null}
-            mode={mode}
-          />
-        </>
-      ) : null}
+        ) : quizCompleted ? (
+          <div className="text-center">
+            <h2>Quiz Completed!</h2>
+            <p>
+              Score: {score} / {selectedQuestions.length} ({((score / selectedQuestions.length) * 100).toFixed(2)}%)
+            </p>
+            <button className="btn btn-success me-2" onClick={handleReviewQuiz}>
+              Review Quiz
+            </button>
+            <button className="btn btn-primary" onClick={resetQuiz}>
+              Start New Quiz
+            </button>
+          </div>
+        ) : isEndScreen ? (
+          <div className="text-center">
+            <h2>End Exam</h2>
+            <button className="btn btn-danger mt-3" onClick={handleEndExam}>
+              Submit Quiz
+            </button>
+          </div>
+        ) : quizStarted && selectedQuestions.length > 0 ? (
+          <>
+            <QuestionNavigator
+              totalQuestions={selectedQuestions.length}
+              currentQuestionIndex={currentQuestionIndex}
+              onQuestionClick={(index) => setCurrentQuestionIndex(index)}
+            />
+            <QuestionDisplay
+              question={selectedQuestions[currentQuestionIndex]}
+              onNext={handleNextQuestion}
+              selectedAnswer={userAnswers[currentQuestionIndex] || null}
+              mode={mode}
+            />
+          </>
+        ) : null}
+      </div>
+
+      {/* Bottom Bar */}
+      <footer className="text-center py-3" style={{ backgroundColor: '#001219', color: '#E9D8A6' }}>
+        Created by Aditya Saxena
+      </footer>
     </div>
   );
 }

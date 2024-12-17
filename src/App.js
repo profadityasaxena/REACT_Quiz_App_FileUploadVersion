@@ -36,10 +36,6 @@ function App() {
 
   const handleFileLoad = (parsedQuestions) => {
     setQuestions(parsedQuestions);
-    resetQuiz();
-  };
-
-  const resetQuiz = () => {
     setSelectedQuestions([]);
     setCurrentQuestionIndex(0);
     setUserAnswers({});
@@ -72,7 +68,8 @@ function App() {
     setSelectedQuestions(selected);
     setQuizStarted(true);
     setTimeRemaining(timeAllowed * 60); // Convert minutes to seconds
-  };  
+  };
+  
 
   const shuffleArray = (array) => {
     for (let i = array.length - 1; i > 0; i--) {
@@ -88,10 +85,11 @@ function App() {
       [currentQuestionIndex]: selectedOption,
     }));
 
+    // Check if the current question is the last one
     if (currentQuestionIndex === selectedQuestions.length - 1) {
-      setIsEndScreen(true);
+      setIsEndScreen(true); // Transition to the end screen
     } else {
-      setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
+      setCurrentQuestionIndex((prevIndex) => prevIndex + 1); // Move to the next question
     }
   };
 
@@ -115,11 +113,7 @@ function App() {
   };
 
   const handleReviewQuiz = () => {
-    setReviewMode(true);
-  };
-
-  const handleStartNewQuiz = () => {
-    resetQuiz(); // Reset the quiz state
+    setReviewMode(true); // Enable review mode
   };
 
   const handleQuestionClick = (index) => {
@@ -182,20 +176,6 @@ function App() {
           <p>Score: {score} / {selectedQuestions.length}</p>
           <p>Percentage: {(score / selectedQuestions.length) * 100}%</p>
           <button onClick={handleReviewQuiz}>Review Quiz</button>
-          <button
-            onClick={handleStartNewQuiz}
-            style={{
-              marginLeft: '10px',
-              padding: '10px 20px',
-              backgroundColor: '#28a745',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer',
-            }}
-          >
-            Start New Quiz
-          </button>
         </div>
       ) : isEndScreen ? (
         <div>

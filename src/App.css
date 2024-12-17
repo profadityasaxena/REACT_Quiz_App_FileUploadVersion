@@ -1,38 +1,137 @@
-.App {
+/* Import Bootstrap */
+@import '~bootstrap/dist/css/bootstrap.min.css';
+
+/* General Styling */
+body {
+  font-family: 'Avenir', sans-serif;
+  margin: 0;
+  padding: 0;
+  color: #001219; /* General text color */
+}
+
+.container-fluid {
+  margin: 0 25px; /* Margin on both sides */
+}
+
+/* Top Navbar */
+.navbar {
+  background-color: #001219 !important;
+  height: 60px;
+}
+
+.navbar-brand,
+.navbar-light .nav-link {
+  color: #E9D8A6 !important;
+  font-weight: bold;
+}
+
+.navbar-light .nav-link:hover {
+  color: #005F73 !important;
+}
+
+/* Jumbotron */
+.jumbotron {
+  background-color: #f8f9fa;
+  padding: 2rem 2rem;
+  border-radius: 10px;
+  margin-top: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.jumbotron h2 {
+  color: #001219;
+  font-weight: bold;
+}
+
+.jumbotron p {
+  color: #001219;
+  font-size: 1rem;
+}
+
+/* Buttons */
+.btn {
+  border-radius: 8px; /* Softly rounded corners */
+  font-size: 1rem;
+  padding: 8px 16px;
+}
+
+.btn-primary {
+  background-color: #005F73;
+  border: none;
+  color: #E9D8A6;
+}
+
+.btn-primary:hover {
+  background-color: #0A9396;
+}
+
+.btn-success {
+  background-color: #0A9396;
+  border: none;
+  color: #E9D8A6;
+}
+
+.btn-danger {
+  background-color: #CA6702;
+  border: none;
+  color: #E9D8A6;
+}
+
+.btn-secondary {
+  background-color: #EE9B00;
+  border: none;
+  color: #001219;
+}
+
+/* Footer */
+footer {
+  background-color: #001219;
+  color: #E9D8A6;
   text-align: center;
+  padding: 10px;
+  position: relative;
+  bottom: 0;
+  width: 100%;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+/* Question Navigator */
+.question-navigator {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  margin-bottom: 20px;
 }
 
-.App-link {
-  color: #61dafb;
+.question-navigator button {
+  margin: 5px;
+  background-color: #005F73;
+  color: #E9D8A6;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.question-navigator button.active {
+  background-color: #0A9396;
+  font-weight: bold;
+}
+
+/* Question Review */
+.review-card {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.correct {
+  color: #0A9396;
+}
+
+.incorrect {
+  color: #CA6702;
+}
+
+.review-answer {
+  font-weight: bold;
 }

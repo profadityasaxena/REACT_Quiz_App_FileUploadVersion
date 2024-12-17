@@ -4,7 +4,6 @@ import QuestionDisplay from './components/QuestionDisplay';
 import QuestionNavigator from './components/QuestionNavigator';
 import ModeSelector from './components/ModeSelector';
 import QuestionReview from './components/QuestionReview';
-import parseAiken from './utils/parseAiken';
 
 function App() {
   const [questions, setQuestions] = useState(() => JSON.parse(localStorage.getItem('questions')) || []);
@@ -146,7 +145,8 @@ function App() {
 
   const getProgressPercentage = () => {
     if (selectedQuestions.length === 0) return 0;
-    return (currentQuestionIndex / selectedQuestions.length) * 100; // Exclude current question
+    if (quizCompleted) return 100;
+    return ((currentQuestionIndex) / selectedQuestions.length) * 100; // Include current question
   };
   
 

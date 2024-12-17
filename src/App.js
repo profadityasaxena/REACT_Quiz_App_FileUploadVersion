@@ -137,6 +137,7 @@ function App() {
   const handleEndExam = () => {
     calculateScore();
     setQuizCompleted(true);
+    setQuizStarted(false); // Stop the timer
   };
 
   const handleReviewQuiz = () => {

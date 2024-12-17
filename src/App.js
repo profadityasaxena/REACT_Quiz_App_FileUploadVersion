@@ -7,32 +7,66 @@ import QuestionReview from './components/QuestionReview';
 import parseAiken from './utils/parseAiken';
 
 function App() {
-  const [questions, setQuestions] = useState([]);
-  const [selectedQuestions, setSelectedQuestions] = useState([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState({});
-  const [isEndScreen, setIsEndScreen] = useState(false);
-  const [quizCompleted, setQuizCompleted] = useState(false);
-  const [mode, setMode] = useState('test');
-  const [quizStarted, setQuizStarted] = useState(false);
-  const [randomize, setRandomize] = useState(false);
-  const [score, setScore] = useState(0);
-  const [reviewMode, setReviewMode] = useState(false);
-  const [timeAllowed, setTimeAllowed] = useState(0);
-  const [timeRemaining, setTimeRemaining] = useState(null);
-  const [numQuestions, setNumQuestions] = useState('all');
+  const [questions, setQuestions] = useState(() => JSON.parse(localStorage.getItem('questions')) || []);
+  const [selectedQuestions, setSelectedQuestions] = useState(() => JSON.parse(localStorage.getItem('selectedQuestions')) || []);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(() => JSON.parse(localStorage.getItem('currentQuestionIndex')) || 0);
+  const [userAnswers, setUserAnswers] = useState(() => JSON.parse(localStorage.getItem('userAnswers')) || {});
+  const [isEndScreen, setIsEndScreen] = useState(() => JSON.parse(localStorage.getItem('isEndScreen')) || false);
+  const [quizCompleted, setQuizCompleted] = useState(() => JSON.parse(localStorage.getItem('quizCompleted')) || false);
+  const [mode, setMode] = useState(() => JSON.parse(localStorage.getItem('mode')) || 'test');
+  const [quizStarted, setQuizStarted] = useState(() => JSON.parse(localStorage.getItem('quizStarted')) || false);
+  const [randomize, setRandomize] = useState(() => JSON.parse(localStorage.getItem('randomize')) || false);
+  const [score, setScore] = useState(() => JSON.parse(localStorage.getItem('score')) || 0);
+  const [reviewMode, setReviewMode] = useState(() => JSON.parse(localStorage.getItem('reviewMode')) || false);
+  const [timeAllowed, setTimeAllowed] = useState(() => JSON.parse(localStorage.getItem('timeAllowed')) || 0);
+  const [timeRemaining, setTimeRemaining] = useState(() => JSON.parse(localStorage.getItem('timeRemaining')) || null);
+  const [numQuestions, setNumQuestions] = useState(() => JSON.parse(localStorage.getItem('numQuestions')) || 'all');
 
   useEffect(() => {
     let timer = null;
     if (quizStarted && timeRemaining > 0) {
       timer = setInterval(() => {
-        setTimeRemaining((prevTime) => prevTime - 1);
+        setTimeRemaining((prevTime) => {
+          const newTime = prevTime - 1;
+          localStorage.setItem('timeRemaining', JSON.stringify(newTime));
+          return newTime;
+        });
       }, 1000);
     } else if (timeRemaining === 0 && quizStarted) {
       handleEndExam();
     }
     return () => clearInterval(timer);
   }, [quizStarted, timeRemaining]);
+
+  useEffect(() => {
+    localStorage.setItem('questions', JSON.stringify(questions));
+    localStorage.setItem('selectedQuestions', JSON.stringify(selectedQuestions));
+    localStorage.setItem('currentQuestionIndex', JSON.stringify(currentQuestionIndex));
+    localStorage.setItem('userAnswers', JSON.stringify(userAnswers));
+    localStorage.setItem('isEndScreen', JSON.stringify(isEndScreen));
+    localStorage.setItem('quizCompleted', JSON.stringify(quizCompleted));
+    localStorage.setItem('mode', JSON.stringify(mode));
+    localStorage.setItem('quizStarted', JSON.stringify(quizStarted));
+    localStorage.setItem('randomize', JSON.stringify(randomize));
+    localStorage.setItem('score', JSON.stringify(score));
+    localStorage.setItem('reviewMode', JSON.stringify(reviewMode));
+    localStorage.setItem('timeAllowed', JSON.stringify(timeAllowed));
+    localStorage.setItem('numQuestions', JSON.stringify(numQuestions));
+  }, [
+    questions,
+    selectedQuestions,
+    currentQuestionIndex,
+    userAnswers,
+    isEndScreen,
+    quizCompleted,
+    mode,
+    quizStarted,
+    randomize,
+    score,
+    reviewMode,
+    timeAllowed,
+    numQuestions,
+  ]);
 
   const handleFileLoad = (parsedQuestions) => {
     setQuestions(parsedQuestions);
@@ -111,16 +145,8 @@ function App() {
 
   const getProgressPercentage = () => {
     if (selectedQuestions.length === 0) return 0;
-  
-    // If quiz is completed, progress is 100%
-    if (quizCompleted || isEndScreen) {
-      return 100;
-    }
-  
-    // Otherwise, calculate progress as the number of answered/skipped questions
-    return ((currentQuestionIndex) / selectedQuestions.length) * 100;
+    return (currentQuestionIndex / selectedQuestions.length) * 100; // Exclude current question
   };
-  
   
 
   return (
@@ -145,18 +171,17 @@ function App() {
             </div>
             {/* Progress Bar */}
             <div className="progress mb-3">
-  <div
-    className="progress-bar"
-    role="progressbar"
-    style={{ width: `${getProgressPercentage()}%` }}
-    aria-valuenow={getProgressPercentage()}
-    aria-valuemin="0"
-    aria-valuemax="100"
-  >
-    {Math.round(getProgressPercentage())}%
-  </div>
-</div>
-
+              <div
+                className="progress-bar"
+                role="progressbar"
+                style={{ width: `${getProgressPercentage()}%` }}
+                aria-valuenow={getProgressPercentage()}
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                {Math.round(getProgressPercentage())}%
+              </div>
+            </div>
           </>
         )}
 

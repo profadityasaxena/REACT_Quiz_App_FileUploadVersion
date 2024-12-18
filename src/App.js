@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import QuestionDisplay from './components/QuestionDisplay';
 import ModeSelector from './components/ModeSelector';
+import QuestionNavigator from './components/QuestionNavigator'; // Add this import
 import QuestionReview from './components/QuestionReview';
 
 function App() {
@@ -117,37 +118,33 @@ function App() {
 
   const handleStartQuiz = () => {
     let selected = [...questions];
-  
-    // Apply shuffling only if randomize is true
+
     if (randomize) {
       selected = shuffleArray([...questions]);
     }
-  
+
     if (numQuestions !== 'all') {
       const totalQuestions = Math.min(parseInt(numQuestions, 10), questions.length);
       selected = selected.slice(0, totalQuestions);
     }
-  
-    // Shuffle options for each question
+
     const randomizedQuestions = selected.map((question) => {
       const options = Object.entries(question.options);
       const shuffledOptions = shuffleArray(options);
-  
-      // Find the new index of the correct answer
+
       const correctAnswerIndex = shuffledOptions.findIndex(([key]) => key === question.answer);
-  
+
       return {
         ...question,
-        shuffledOptions, // Store shuffled options as an array
-        correctAnswerIndex, // Track the index of the correct answer
+        shuffledOptions,
+        correctAnswerIndex,
       };
     });
-  
+
     setSelectedQuestions(randomizedQuestions);
     setQuizStarted(true);
     setTimeRemaining(timeAllowed * 60); // Convert minutes to seconds
   };
-  
 
   const shuffleArray = (array) => {
     for (let i = array.length - 1; i > 0; i--) {
@@ -250,15 +247,23 @@ function App() {
               </button>
             </div>
           ) : quizStarted && selectedQuestions.length > 0 ? (
-            <QuestionDisplay
-              question={selectedQuestions[currentQuestionIndex]}
-              onNext={handleNextQuestion}
-              onPrevious={() => setCurrentQuestionIndex((prev) => prev - 1)}
-              selectedAnswer={userAnswers[currentQuestionIndex] || null}
-              isLastQuestion={currentQuestionIndex === selectedQuestions.length - 1}
-              isFirstQuestion={currentQuestionIndex === 0}
-              mode={mode}
-            />
+            <>
+              <QuestionDisplay
+                question={selectedQuestions[currentQuestionIndex]}
+                onNext={handleNextQuestion}
+                onPrevious={() => setCurrentQuestionIndex((prev) => prev - 1)}
+                selectedAnswer={userAnswers[currentQuestionIndex] || null}
+                isLastQuestion={currentQuestionIndex === selectedQuestions.length - 1}
+                isFirstQuestion={currentQuestionIndex === 0}
+                mode={mode}
+              />
+              <QuestionNavigator
+                totalQuestions={selectedQuestions.length}
+                currentQuestionIndex={currentQuestionIndex}
+                onQuestionClick={(index) => setCurrentQuestionIndex(index)}
+              />
+              
+            </>
           ) : (
             <div>
               <FileUpload onFileLoad={handleFileLoad} />

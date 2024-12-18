@@ -36,11 +36,14 @@ const QuestionDisplay = ({
     setRevealAnswer(true);
   };
 
+  // Map option letters (A, B, C, D, ...) to the shuffled options
+  const optionLetters = ['A', 'B', 'C', 'D'];
+
   return (
     <div style={{ margin: '20px', padding: '20px', border: '1px solid #ccc' }}>
       <h3>{question.text}</h3>
       <form>
-        {question.shuffledOptions.map(([key, value], index) => (
+        {question.shuffledOptions.map(([_, value], index) => (
           <div key={index}>
             <label>
               <input
@@ -51,7 +54,7 @@ const QuestionDisplay = ({
                 onChange={handleOptionChange}
                 disabled={mode === 'practice' && revealAnswer} // Disable after reveal in Practice Mode
               />
-              {key}. {value}
+              {`${optionLetters[index]}].`} {value}
             </label>
           </div>
         ))}
@@ -63,8 +66,7 @@ const QuestionDisplay = ({
       )}
       {revealAnswer && mode === 'practice' && (
         <p style={{ color: 'green' }}>
-          Correct Answer: {question.shuffledOptions[question.correctAnswerIndex][0]}.{' '}
-          {question.shuffledOptions[question.correctAnswerIndex][1]}
+          Correct Answer: {`${optionLetters[question.correctAnswerIndex]}].`} {question.shuffledOptions[question.correctAnswerIndex][1]}
         </p>
       )}
       <div style={{ marginTop: '20px' }}>

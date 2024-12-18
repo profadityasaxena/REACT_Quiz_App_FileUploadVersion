@@ -17,7 +17,7 @@ const QuestionDisplay = ({
   }, [selectedAnswer, question]);
 
   const handleOptionChange = (e) => {
-    setSelectedOption(e.target.value);
+    setSelectedOption(parseInt(e.target.value, 10)); // Ensure `selectedOption` is a number
   };
 
   const handleNext = () => {
@@ -34,20 +34,26 @@ const QuestionDisplay = ({
     setRevealAnswer(true);
   };
 
+  // Safeguard for undefined or invalid question
+  if (!question || !Array.isArray(question.shuffledOptions)) {
+    return <p style={{ color: 'red' }}>Error: Question data is not available.</p>;
+  }
+
   return (
     <div style={{ margin: '20px', padding: '20px', border: '1px solid #ccc' }}>
-      <h3>{question.text}</h3>
+      <h3>{question.text || 'Question not available'}</h3>
       <form>
-        {Object.entries(question.options).map(([key, value]) => (
-          <div key={key}>
+        {question.shuffledOptions.map(([key, value], index) => (
+          <div key={index}>
             <label>
               <input
                 type="radio"
                 name="option"
-                value={key}
-                checked={selectedOption === key}
+                value={index} // Use the index of the shuffled option as the value
+                checked={selectedOption === index} // Compare selectedOption as a number
                 onChange={handleOptionChange}
                 disabled={mode === 'practice' && revealAnswer} // Disable after reveal in Practice Mode
+                aria-label={`${key}. ${value}`} // Accessibility improvement
               />
               {key}. {value}
             </label>
@@ -60,13 +66,16 @@ const QuestionDisplay = ({
         </button>
       )}
       {revealAnswer && mode === 'practice' && (
-        <p style={{ color: 'green' }}>Correct Answer: {question.answer}</p>
+        <p style={{ color: 'green' }}>
+          Correct Answer: {question.shuffledOptions[question.correctAnswerIndex][0]}.
+          {question.shuffledOptions[question.correctAnswerIndex][1]}
+        </p>
       )}
       <div style={{ marginTop: '20px' }}>
         <button onClick={handlePrevious} disabled={isFirstQuestion}>
           Previous
         </button>
-        <button onClick={handleNext} style={{ marginLeft: '10px' }}>
+        <button onClick={handleNext} style={{ marginLeft: '10px' }} disabled={selectedOption === null}>
           Next
         </button>
       </div>

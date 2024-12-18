@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import QuestionDisplay from './components/QuestionDisplay';
-import QuestionNavigator from './components/QuestionNavigator';
 import ModeSelector from './components/ModeSelector';
 import QuestionReview from './components/QuestionReview';
 
@@ -21,6 +20,23 @@ function App() {
   const [timeRemaining, setTimeRemaining] = useState(() => JSON.parse(localStorage.getItem('timeRemaining')) || null);
   const [numQuestions, setNumQuestions] = useState(() => JSON.parse(localStorage.getItem('numQuestions')) || 'all');
 
+  const calculateScore = useCallback(() => {
+    let correctCount = 0;
+    selectedQuestions.forEach((question, index) => {
+      const selectedOptionIndex = userAnswers[index];
+      if (selectedOptionIndex === question.correctAnswerIndex) {
+        correctCount++;
+      }
+    });
+    setScore(correctCount);
+  }, [selectedQuestions, userAnswers]);
+
+  const handleEndExam = useCallback(() => {
+    calculateScore();
+    setQuizCompleted(true);
+    setQuizStarted(false); // Stop the timer
+  }, [calculateScore]);
+
   useEffect(() => {
     let timer = null;
     if (quizStarted && timeRemaining > 0) {
@@ -32,10 +48,10 @@ function App() {
         });
       }, 1000);
     } else if (timeRemaining === 0 && quizStarted) {
-      handleEndExam();
+      handleEndExam(); // Use the memoized handleEndExam
     }
     return () => clearInterval(timer);
-  }, [quizStarted, timeRemaining]);
+  }, [quizStarted, timeRemaining, handleEndExam]);
 
   useEffect(() => {
     localStorage.setItem('questions', JSON.stringify(questions));
@@ -68,7 +84,18 @@ function App() {
   ]);
 
   const handleFileLoad = (parsedQuestions) => {
-    setQuestions(parsedQuestions);
+    const shuffledQuestions = parsedQuestions.map((question) => {
+      const options = Object.entries(question.options);
+      const shuffledOptions = shuffleArray(options);
+      const correctAnswerIndex = shuffledOptions.findIndex(([key]) => key === question.answer);
+
+      return {
+        ...question,
+        shuffledOptions,
+        correctAnswerIndex,
+      };
+    });
+    setQuestions(shuffledQuestions);
     resetQuiz();
   };
 
@@ -90,18 +117,37 @@ function App() {
 
   const handleStartQuiz = () => {
     let selected = [...questions];
-    if (randomize || numQuestions !== 'all') {
+  
+    // Apply shuffling only if randomize is true
+    if (randomize) {
       selected = shuffleArray([...questions]);
     }
+  
     if (numQuestions !== 'all') {
       const totalQuestions = Math.min(parseInt(numQuestions, 10), questions.length);
       selected = selected.slice(0, totalQuestions);
     }
-
-    setSelectedQuestions(selected);
+  
+    // Shuffle options for each question
+    const randomizedQuestions = selected.map((question) => {
+      const options = Object.entries(question.options);
+      const shuffledOptions = shuffleArray(options);
+  
+      // Find the new index of the correct answer
+      const correctAnswerIndex = shuffledOptions.findIndex(([key]) => key === question.answer);
+  
+      return {
+        ...question,
+        shuffledOptions, // Store shuffled options as an array
+        correctAnswerIndex, // Track the index of the correct answer
+      };
+    });
+  
+    setSelectedQuestions(randomizedQuestions);
     setQuizStarted(true);
     setTimeRemaining(timeAllowed * 60); // Convert minutes to seconds
   };
+  
 
   const shuffleArray = (array) => {
     for (let i = array.length - 1; i > 0; i--) {
@@ -123,22 +169,6 @@ function App() {
     }
   };
 
-  const calculateScore = () => {
-    let correctCount = 0;
-    selectedQuestions.forEach((question, index) => {
-      if (userAnswers[index] === question.answer) {
-        correctCount++;
-      }
-    });
-    setScore(correctCount);
-  };
-
-  const handleEndExam = () => {
-    calculateScore();
-    setQuizCompleted(true);
-    setQuizStarted(false); // Stop the timer
-  };
-
   const handleReviewQuiz = () => {
     setReviewMode(true);
   };
@@ -146,7 +176,7 @@ function App() {
   const getProgressPercentage = () => {
     if (selectedQuestions.length === 0) return 0;
     if (quizCompleted || isEndScreen) return 100;
-    return ((currentQuestionIndex + 1) / selectedQuestions.length) * 100; // Include current question
+    return ((currentQuestionIndex + 1) / selectedQuestions.length) * 100;
   };
 
   return (
@@ -186,26 +216,19 @@ function App() {
         )}
 
         <div className="jumbotron">
-        {reviewMode ? (
-  <div className="text-center">
-    <QuestionReview
-      questions={selectedQuestions}
-      userAnswers={userAnswers}
-      score={score}
-      totalQuestions={selectedQuestions.length}
-    />
-    <button
-      className="btn btn-primary mt-3"
-      onClick={resetQuiz}
-    >
-      Return to Main Screen
-    </button>
-    <hr />
-    <hr />
-
-  </div>
-) : quizCompleted ? (
-
+          {reviewMode ? (
+            <div className="text-center">
+              <QuestionReview
+                questions={selectedQuestions}
+                userAnswers={userAnswers}
+                score={score}
+                totalQuestions={selectedQuestions.length}
+              />
+              <button className="btn btn-primary mt-3" onClick={resetQuiz}>
+                Return to Main Screen
+              </button>
+            </div>
+          ) : quizCompleted ? (
             <div className="text-center">
               <h2>Quiz Completed!</h2>
               <p>
@@ -227,20 +250,15 @@ function App() {
               </button>
             </div>
           ) : quizStarted && selectedQuestions.length > 0 ? (
-            <>
-              <QuestionDisplay
-                question={selectedQuestions[currentQuestionIndex]}
-                onNext={handleNextQuestion}
-                onPrevious={() => setCurrentQuestionIndex((prev) => prev - 1)}
-                selectedAnswer={userAnswers[currentQuestionIndex] || null}
-                mode={mode}
-              />
-              <QuestionNavigator
-                totalQuestions={selectedQuestions.length}
-                currentQuestionIndex={currentQuestionIndex}
-                onQuestionClick={(index) => setCurrentQuestionIndex(index)}
-              />
-            </>
+            <QuestionDisplay
+              question={selectedQuestions[currentQuestionIndex]}
+              onNext={handleNextQuestion}
+              onPrevious={() => setCurrentQuestionIndex((prev) => prev - 1)}
+              selectedAnswer={userAnswers[currentQuestionIndex] || null}
+              isLastQuestion={currentQuestionIndex === selectedQuestions.length - 1}
+              isFirstQuestion={currentQuestionIndex === 0}
+              mode={mode}
+            />
           ) : (
             <div>
               <FileUpload onFileLoad={handleFileLoad} />
@@ -286,7 +304,6 @@ function App() {
         </div>
         <div style={{ height: '100px' }}></div>
       </div>
-
 
       {/* Footer */}
       <footer className="text-center py-3 fixed-bottom" style={{ backgroundColor: '#001219', color: '#E9D8A6' }}>
